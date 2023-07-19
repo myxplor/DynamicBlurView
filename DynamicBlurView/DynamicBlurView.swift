@@ -135,17 +135,22 @@ open class DynamicBlurView: UIView {
 
     private func snapshotImage(for layer: CALayer, conversion: Bool) -> UIImage? {
         let rect = blurLayerRect(to: layer, conversion: conversion)
-        guard let context = CGContext.imageContext(with: quality, rect: rect, opaque: isOpaque) else {
-            return nil
+        
+        var format = UIGraphicsImageRendererFormat()
+        format.scale = quality.imageScale
+        format.opaque = isOpaque
+        
+        let renderer = UIGraphicsImageRenderer(size: bounds.size, format: format)
+        let image = renderer.image { context in
+            let cgContext = context.cgContext
+            
+            cgContext.translateBy(x: -rect.origin.x, y: -rect.origin.y)
+            cgContext.interpolationQuality = quality.interpolationQuality
+            
+            blurLayer.render(in: cgContext, for: layer)
         }
-
-        blurLayer.render(in: context, for: layer)
-
-        defer {
-            UIGraphicsEndImageContext()
-        }
-
-        return UIGraphicsGetImageFromCurrentImageContext()
+        
+        return image
     }
 }
 
